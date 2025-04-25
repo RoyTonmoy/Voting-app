@@ -1,0 +1,54 @@
+version: '3.8'
+services:
+  voting-app:
+    build:
+      context: ./voting-app
+    ports:
+      - 5000:5000
+    depends_on:
+      - redis
+    networks:
+      - voting-network
+
+  redis:
+    image: redis:alpine
+    networks: 
+      - voting-network
+
+  worker:
+    build:
+      context: ./worker
+    depends_on: 
+      - redis
+      - db
+    networks:
+      - voting-network
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: voting_user
+      POSTGRES_PASSWORD: voting_pass
+      POSTGRES_DB: voting_db
+    volumes:
+      - pgdata: /var/lib/postgresql/data
+    networks:
+      - voting-network
+
+  result-app:
+    build:
+      context: ./result-app
+    ports:
+      - 5001:5001
+    depends_on:
+      - db
+    network:
+      - voting-network
+
+
+networks:
+  voting-network:
+    driver: bridge
+
+volumes:
+  pgdata:
